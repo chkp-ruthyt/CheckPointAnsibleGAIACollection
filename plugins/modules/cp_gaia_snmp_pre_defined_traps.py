@@ -105,6 +105,15 @@ options:
                 description: Enables/Disables the linkUpLinkDown Trap.
                 required: False
                 type: bool
+    lowDiskSpace:
+        description: lowDiskSpace Trap.
+        required: False
+        type: dict
+        suboptions:
+            enabled:
+                description: Enables/Disables the lowDiskSpace Trap.
+                required: False
+                type: bool
     clusterXLFailover:
         description: clusterXLFailover Trap.
         required: False
@@ -244,6 +253,7 @@ def main():
         fanFailure=dict(type="dict", options=dict(enabled=dict(type="bool"))),
         highVoltage=dict(type="dict", options=dict(enabled=dict(type="bool"))),
         linkUpLinkDown=dict(type="dict", options=dict(enabled=dict(type="bool"))),
+        lowDiskSpace=dict(type="dict", options=dict(enabled=dict(type="bool"))),
         clusterXLFailover=dict(type="dict", options=dict(enabled=dict(type="bool"))),
         lowVoltage=dict(type="dict", options=dict(enabled=dict(type="bool"))),
         overTemperature=dict(type="dict", options=dict(enabled=dict(type="bool"))),
