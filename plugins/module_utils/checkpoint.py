@@ -64,12 +64,10 @@ def idempotency_check(old_val, new_val):
     elif isinstance(new_val, list):
         if len(new_val) != len(old_val):
             return False
-        # Compare list items individually with recursion instead of exact equality
         for new_item, old_item in zip(new_val, old_val):
             if idempotency_check(old_item, new_item) is False:
                 return False
     else:
-        # Cast both values to strings to handle int/str mismatches (e.g. ver: 4 vs "4")
         if str(new_val) != str(old_val):
             return False
     return True
@@ -224,9 +222,6 @@ def chkp_facts_api_call(module, api_call_object, is_multible):
 
 
 def _strip_ignore(d, ignore):
-    # Recursively remove ignored keys from a dict or list of dicts.
-    # This allows ignoring read-only fields (e.g. 'status') inside nested structures
-    # such as the server objects returned by show-ntp.
     def _filter(val):
         if isinstance(val, dict):
             return {k: _filter(v) for k, v in val.items() if k not in ignore}

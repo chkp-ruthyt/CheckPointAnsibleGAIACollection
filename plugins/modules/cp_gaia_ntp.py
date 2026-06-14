@@ -89,10 +89,6 @@ from ansible_collections.check_point.gaia.plugins.module_utils.checkpoint import
 
 
 def _normalize_server_for_compare(server):
-    # The Gaia API show-ntp always returns type='server' for both primary and
-    # secondary servers on pre-R82, and uses 'ver' (string) instead of 'version'
-    # (int) due to the AFTER_REQUEST transform in checkpoint.py. Normalize here
-    # so the idempotency check does not always fail and trigger an unnecessary set-ntp.
     normalized = {}
     if server.get('address') is not None:
         normalized['address'] = server['address']
