@@ -88,8 +88,26 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.check_point.gaia.plugins.module_utils.checkpoint import chkp_api_call, checkpoint_argument_spec_for_all
 
 
+def _normalize_server_for_compare(server):
+    # The Gaia API show-ntp always returns type='server' for both primary and
+    # secondary servers on pre-R82, and uses 'ver' (string) instead of 'version'
+    # (int) due to the AFTER_REQUEST transform in checkpoint.py. Normalize here
+    # so the idempotency check does not always fail and trigger an unnecessary set-ntp.
+    normalized = {}
+    if server.get('address') is not None:
+        normalized['address'] = server['address']
+    version = server.get('version') if server.get('version') is not None else server.get('ver')
+    if version is not None:
+        normalized['ver'] = str(version)
+    server_type = server.get('type')
+    if server_type in ('primary', 'secondary'):
+        normalized['type'] = 'server'
+    elif server_type is not None:
+        normalized['type'] = server_type
+    return normalized
+
+
 def main():
-    # arguments for the module:
     fields = dict(
         enabled=dict(type='bool'),
         servers=dict(
@@ -105,7 +123,17 @@ def main():
     module = AnsibleModule(argument_spec=fields, supports_check_mode=True)
     api_call_object = 'ntp'
 
-    res = chkp_api_call(module, api_call_object, False)
+    compare_params = {}
+    if module.params.get('enabled') is not None:
+        compare_params['enabled'] = module.params['enabled']
+    if module.params.get('servers') is not None:
+        compare_params['servers'] = [
+            _normalize_server_for_compare(s)
+            for s in module.params['servers']
+            if s is not None
+        ]
+
+    res = chkp_api_call(module, api_call_object, False, ignore=['status'], compare_params=compare_params)
     module.exit_json(**res)
 
 

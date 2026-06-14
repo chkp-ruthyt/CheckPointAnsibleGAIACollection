@@ -64,11 +64,13 @@ def idempotency_check(old_val, new_val):
     elif isinstance(new_val, list):
         if len(new_val) != len(old_val):
             return False
-        for item in new_val:
-            if item not in old_val:
+        # Compare list items individually with recursion instead of exact equality
+        for new_item, old_item in zip(new_val, old_val):
+            if idempotency_check(old_item, new_item) is False:
                 return False
     else:
-        if new_val != old_val:
+        # Cast both values to strings to handle int/str mismatches (e.g. ver: 4 vs "4")
+        if str(new_val) != str(old_val):
             return False
     return True
 
@@ -221,7 +223,20 @@ def chkp_facts_api_call(module, api_call_object, is_multible):
     }
 
 
-def chkp_api_call(module, api_call_object, has_add_api, ignore=None, show_params=None, add_params=None, is_maestro_special=False):
+def _strip_ignore(d, ignore):
+    # Recursively remove ignored keys from a dict or list of dicts.
+    # This allows ignoring read-only fields (e.g. 'status') inside nested structures
+    # such as the server objects returned by show-ntp.
+    def _filter(val):
+        if isinstance(val, dict):
+            return {k: _filter(v) for k, v in val.items() if k not in ignore}
+        elif isinstance(val, list):
+            return [_filter(v) for v in val]
+        return val
+    return _filter(d)
+
+
+def chkp_api_call(module, api_call_object, has_add_api, ignore=None, show_params=None, add_params=None, is_maestro_special=False, compare_params=None):
     target_version = get_version(module)
     changed = False
     if show_params is None:
@@ -233,10 +248,11 @@ def chkp_api_call(module, api_call_object, has_add_api, ignore=None, show_params
     module.params = module_params_show
     if not is_maestro_special:
         code, res = api_call(module, target_version, api_call_object="show-{0}".format(api_call_object))
+        res = _strip_ignore(res, ignore)
         before = res.copy()
-        [before.pop(key, None) for key in ignore]
     else:
         code, res = api_call(module, target_version, api_call_object="show-maestro-security-groups")
+        res = _strip_ignore(res, ignore)
         before = res.copy()
 
     # Run the command:
@@ -264,7 +280,8 @@ def chkp_api_call(module, api_call_object, has_add_api, ignore=None, show_params
                     del params_dict[key]
 
             if code == 200:
-                if idempotency_check(res, params_dict) is True:
+                params_for_idempotency = compare_params if compare_params is not None else params_dict
+                if idempotency_check(res, params_for_idempotency) is True:
                     return {
                         api_call_object.replace('-', '_'): res,
                         "changed": False
@@ -289,9 +306,7 @@ def chkp_api_call(module, api_call_object, has_add_api, ignore=None, show_params
     else:
         module.fail_json(msg=parse_fail_message(code, res))
 
-    after = res.copy()
-    [after.pop(key, None) for key in ignore]
-
+    after = _strip_ignore(res, ignore)
     changed = False if before == after else True
 
     return {
