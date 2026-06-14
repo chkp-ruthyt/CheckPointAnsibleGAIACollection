@@ -64,8 +64,8 @@ def idempotency_check(old_val, new_val):
     elif isinstance(new_val, list):
         if len(new_val) != len(old_val):
             return False
-        for new_item, old_item in zip(new_val, old_val):
-            if idempotency_check(old_item, new_item) is False:
+        for new_item in new_val:
+            if not any(idempotency_check(old_item, new_item) for old_item in old_val):
                 return False
     else:
         if str(new_val) != str(old_val):
