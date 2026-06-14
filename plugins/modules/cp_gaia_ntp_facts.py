@@ -100,6 +100,10 @@ def main():
     api_call_object = 'ntp'
 
     res = chkp_facts_api_call(module, api_call_object, False)
+    # restore 'version' field renamed to 'ver' by AFTER_REQUEST transform
+    for server in res.get("ansible_facts", {}).get("servers", []):
+        if "ver" in server:
+            server["version"] = server.pop("ver")
     module.exit_json(ansible_facts=res["ansible_facts"])
 
 

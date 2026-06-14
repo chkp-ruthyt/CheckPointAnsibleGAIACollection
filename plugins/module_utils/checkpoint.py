@@ -99,6 +99,7 @@ def is_checkpoint_param(parameter):
 
 # build the payload from the parameters which has value (not None), and they are parameter of checkpoint API as well
 def replace_chkp_params(params, request_type):
+    params = dict(params)  # avoid mutating the caller's dict
     payload = {}
     old = ""
     new = ""
@@ -269,10 +270,7 @@ def chkp_api_call(module, api_call_object, has_add_api, ignore=None, show_params
         if is_maestro_special:
             code, res = api_call(module, target_version, api_call_object="apply-{0}".format(api_call_object))
         else:
-            params_dict = module.params.copy()
-            for key, value in module.params.items():
-                if not is_checkpoint_param(key):
-                    del params_dict[key]
+            params_dict = dict((k, v) for k, v in module.params.items() if is_checkpoint_param(k) and v is not None)
 
             if code == 200:
                 params_for_idempotency = compare_params if compare_params is not None else params_dict
