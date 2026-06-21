@@ -79,9 +79,8 @@ def _check_task_success(module, task):
     details = task.get('task-details') or []
     rc = details[0].get('return-value') if details else None
     if rc is not None and rc != 0:
-        error_msg = _task_error_detail(task)
-        if error_msg:
-            _fail_task(module, task, 'completed with error', error_msg)
+        error_msg = _task_error_detail(task) or 'Look at the logs for more details'
+        _fail_task(module, task, 'completed with error', error_msg)
 
 
 def idempotency_check(old_val, new_val):

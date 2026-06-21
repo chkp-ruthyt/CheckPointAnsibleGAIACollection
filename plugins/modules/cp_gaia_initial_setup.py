@@ -123,11 +123,6 @@ options:
         required: False
         default: False
         type: bool
-      install_ppak:
-        description: Install Performance Pack (PPAK/SecureXL). Defaults to true.
-        required: False
-        default: True
-        type: bool
       activation_key:
         description: Secure Internal Communication key.
         required: False
@@ -208,7 +203,6 @@ def main():
             options=dict(
                 dynamically_assigned_ip=dict(type='bool', required=False, default=False),
                 cluster_member=dict(type='bool', required=False, default=False),
-                install_ppak=dict(type='bool', required=False, default=True),
                 activation_key=dict(type='str', required=False, no_log=True),
                 vsnext=dict(type='bool', required=False, default=False),
                 elastic_xl=dict(type='bool', required=False, default=False)
